@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            #game { position: relative; margin: 10vh auto; box-shadow: 0 0 10px #333; }
+            #game>* { position: absolute; }
+        </style>
+    </head>
+    <body>
+        <script>
+            class HTMLobj {
+                constructor (name, w, h, color = 'white') {
+                    this.name = name
+                    this.w = w
+                    this.h = h                    
+                    this.color = color              
+                }
+                create(main) {
+                    main.innerHTML += `<div id="${this.name}"></div>`
+                    this.show()
+                }
+                show() {
+                    this.elem = document.getElementById(this.name),
+                    this.elem.style.width = this.w + 'px'
+                    this.elem.style.height = this.h + 'px'
+                    this.elem.style.background = this.color                 
+                }
+            }
+
+            class JSobj extends HTMLobj {
+                constructor(name, w, h, r = null, color, x = 0, y = 0, dx = 0, dy = 0) {
+                    super(name, w, h, color, x, y, dx, dy)    
+                    this.r = r         
+                    this.x = x
+                    this.y = y
+                    this.dx = dx
+                    this.dy = dy
+                }
+                show() {
+                    super.show()
+                    this.elem.style.borderRadius = this.r + '%'
+                    this.elem.style.left = this.x + 'px'
+                    this.elem.style.top = this.y + 'px'
+                }
+            }
+
+            const game = new HTMLobj ('game', 800, 600, 0, 'white')
+            const ball = new JSobj ('ball', 30, 30, 50, 'red', 0, 0, 5, 5)
+            const bar = new JSobj ('bar', 150, 10, 10, 'blue', 0, 0, 10)
+
+            ball.move = function() {
+                if (this.x < 0 || this.x >= game.w - this.w) this.dx *= -1
+                if (this.y < 0 || this.y >= game.h - this.h - bar.h &&
+                    this.x + this.w / 2 > bar.x && this.x < bar.x + bar.w - this.w / 2) this.dy *= -1
+                if (this.y >= game.h - this.h) {
+                    game.over()
+                    return
+                }
+                this.x += this.dx
+                this.y += this.dy
+                this.show()
+                bricks.collision()
+            }
+            
+            bar.y = game.h - bar.h
+            bar.move = function(e) {
+                if(e.keyCode == 37) this.x -= this.dx
+                if(e.keyCode == 39 ) this.x += this.dx
+                if (this.x < 0) this.x = 0 
+                if (this.x > game.w - this.w) this.x = game.w - this.w 
+                this.show()
+            }
+
+            game.over = function() {
+                clearInterval(timer)
+                alert("Fso !")
+            }
+
+            const bricks = {
+                row: 3,
+                col: 5,
+                gap: 10,
+                arr: [],
+                create() {
+                    for (let i = 0; i < this.row; i++) {
+                        for (let j = 0; j < this.col; j++) {
+                            let name = `b${i}${j}`
+                            let w = (game.w - (this.col + 1) * this.gap) / this.col
+                            let h = w / 5
+                            let x = (j + 1) * this.gap + j * w
+                            let y = (i + 1) * this.gap + i * h
+                            const brick = new JSobj(name, w, h, null, 'orange', x, y)
+                            brick.status = 1
+                            this.arr.push(brick)
+                            brick.create(game.elem)
+                        }
+                    }
+                },
+                collision() {
+                    for (let i = 0; i < this.arr.length; i++) {
+                        const brick = this.arr[i];
+                        if (
+                            brick.status &&
+                            (ball.x + ball.w/2) > brick.x && 
+                            (ball.x + ball.w/2) < brick.x + brick.w &&
+                            ball.y + ball.h > brick.y &&
+                            ball.y < brick.y + brick.h
+                        ) {
+                            document.getElementById(brick.name).remove();
+                            brick.status -= 1
+                            ball.dy *= -1
+                        }
+                    }
+                }
+            }
+
+
+            ball.y = game.h - bar.h - ball.h
+            game.create( document.querySelector('body') )
+            ball.create( game.elem )
+            bar.create( game.elem )
+            bricks.create()
+
+            let timer = setInterval(() => ball.move(), 40)
+            document.onkeydown = (e) => bar.move(e)
+        </script>
+    </body>
+</html>
